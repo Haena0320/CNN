@@ -1,6 +1,30 @@
 import re
 import numpy as np
 import torch
+import re
+
+# 데이티 전처리 추가 - 저자 전처리 코드 참고
+def clean_str(string, TREC=False):
+    string = re.sub(r"[^A-Za-z0-9(),!?\'\`]", " ", string)
+    string = re.sub(r"\'s", " \'s", string)
+    string = re.sub(r"\'ve", " \'ve", string)
+    string = re.sub(r"n\'t", " n\'t", string)
+    string = re.sub(r"\'re", " \'re", string)
+    string = re.sub(r"\'d", " \'d", string)
+    string = re.sub(r"\'ll", " \'ll", string)
+    string = re.sub(r",", " , ", string)
+    string = re.sub(r"!", " ! ", string)
+    string = re.sub(r"\(", " \( ", string)
+    string = re.sub(r"\)", " \) ", string)
+    string = re.sub(r"\?", " \? ", string)
+    string = re.sub(r"\s{2,}", " ", string)
+    return string.strip() if TREC else string.strip().lower()
+
+def clean_str_sst(string):
+    string = re.sub(r"[^A-Za-z0-9(),!?\'\`]", " ", string)
+    string = re.sub(r"\s{2,}", " ", string)
+    return string.strip().lower()
+
 
 def get_vocab(data_list=None, dataset="", padding=1):
     max_sent_len = 0
@@ -13,6 +37,14 @@ def get_vocab(data_list=None, dataset="", padding=1):
         else:  # MR, SUBJ, TREC
             f = open(data, encoding='ISO-8859-1')
         for line in f:
+            if dataset in ["SST1", "SST2"]:
+                line = clean_str_sst(line)
+
+            elif dataset in ["CR", "MPQA", "MR", "SUBJ"]:
+                line = clean_str(line)
+            else: # TREC
+                line = clean_str(line, True)
+
             words = line.split()
             max_sent_len = max(max_sent_len, len(words))
             for word in words:
@@ -69,24 +101,36 @@ def load_data(dataset, train_name, test_name="", dev_name="", padding=4):
                 line = f.readline()
                 if not line:
                     break
+
+                y = int(line[0])
+                words = line[1:]
+                sent = []
+
+                for word in words:
+                    sent.append(word)
+
             else:
                 line = f.readline().decode('ISO-8859-1')
+                if dataset =="TREC":
+                    line = clean_str(line, True)
+                else:
+                    line = clean_str(line)
                 line = line.split()
                 if not line:
                     break
 
-            y = int(line[0])
-            words = line[1:]
-            sent = []
+                y = int(line[0])
+                words = line[1:]
+                sent = []
 
-            for word in words:
-                sent.append(word)
+                for word in words:
+                    sent.append(word2id[word])
 
             # end padding
             if len(sent) < max_sent_len + padding:
-                sent.extend([1] * (max_sent_len + padding - len(sent)))
+                sent.extend([0] * (max_sent_len + padding - len(sent)))
             # start padding
-            sent = [1] * padding + sent
+            sent = [0] * padding + sent
 
             d.append(sent)
             lb.append(y)
@@ -101,9 +145,8 @@ def load_data(dataset, train_name, test_name="", dev_name="", padding=4):
         test_label = label_adjust(test_label)
     if not dev_name =="":
         dev_label = label_adjust(dev_label)
-    return word2id, np.array(train, dtype=object), np.array(train_label, dtype=object), np.array(test,
-                                                                                                 dtype=object), np.array(
-        test_label, dtype=object), np.array(dev, dtype=object), np.array(dev_label, dtype=object)
+    print(train)
+    return word2id, np.array(train, dtype=object), np.array(train_label), np.array(test), np.array(test_label), np.array(dev), np.array(dev_label)
 
 
 def label_adjust(label):
@@ -116,10 +159,10 @@ def adjust_data(train, train_label, test, test_label, dev, dev_label):
     if (len(test) ==0 & len(dev) ==0):
 
         test = train[:limit]
-        test_label = train[:limit]
+        test_label = train_label[:limit]
 
         dev = train[limit:2*limit]
-        dev_label = train[limit:2*limit]
+        dev_label = train_label[limit:2*limit]
         
     elif (len(test) ==0 & len(dev) !=0):
         test = train[:limit]
@@ -147,10 +190,8 @@ def pretrained_weights(model, word2id, save_path):
             weights[id] = wv
             cnt+=1
         except:
-            weights[id] = np.random.randn(embedding_dim)
+            weights[id] = np.random.randn(embedding_dim)*0.2 # max_norm 0.2
 
     print("total vocabulary :{} | pretrained weights vocabulary : {} | random weights vocabulary : {}".format(vocab_size, cnt, vocab_size-cnt))
     torch.save(weights, save_path)
     return None
-
-

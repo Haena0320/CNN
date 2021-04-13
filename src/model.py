@@ -24,7 +24,7 @@ class CNN_Classifier(nn.Module):
         self.n_filters = n_filters
         super().__init__()
         if self.type == "rand":
-            self.emb = nn.Embedding(self.vocab_size, self.dimension)
+            self.emb = nn.Embedding(self.vocab_size, self.dimension, max_norm=0.2)
         else:
             weights = torch.Tensor(torch.load(data_info.weights))
             if self.type =="static":

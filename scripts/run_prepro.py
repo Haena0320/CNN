@@ -14,7 +14,6 @@ import argparse
 parser = argparse.ArgumentParser()
 
 parser.add_argument('--mode', type=str, default="prepro0")
-#parser.add_argument('--dataset', help='Data set', type=str, default="CR")
 parser.add_argument('--word2vec', help='word2vec file', type=str)
 parser.add_argument('--padding', help="padding around each sentence", type=int, default=4)
 parser.add_argument('--config', type=str, default="default")
@@ -25,7 +24,8 @@ config = load_config(args.config)
 model = api.load("word2vec-google-news-300")
 
 data = dict()
-for dataset in ["SST1","SST2", "MR", "SUBJ", "CR", "MPQA", "TREC"]:
+#for dataset in ["SST1","SST2", "MR", "SUBJ", "CR", "MPQA", "TREC"]:
+for dataset in ["MPQA"]:
     print(dataset)
     data[dataset] = dict()
     train_path, dev_path, test_path = config.path_rawdata[dataset]

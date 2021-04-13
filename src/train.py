@@ -15,11 +15,12 @@ def get_optimizer(model, config, args_optim):
     if args_optim == "adam":
         return torch.optim.Adam(model.parameters(), lr=1e-05, weight_decay=config.train.weight_decay)
 
-    if args_optim == "adagrad":
-        return torch.optim.Adagrad(model.parameters(), lr=1e-05, weight_decay=config.train.weight_decay)
+    if args_optim == "adadelta":
+        return torch.optim.Adadelta(model.parameters(), lr=1, rho=1e-06, weight_decay=config.train.weight_decay)
 
 def get_lr_scheduler(optimizer):
-    return torch.optim.lr_scheduler.LambdaLR(optimizer=optimizer, lr_lambda = lambda epoch: 0.95**epoch, last_epoch=-1, verbose=False)
+    #return torch.optim.lr_scheduler.LambdaLR(optimizer=optimizer, lr_lambda = lambda epoch: 0.95**epoch, last_epoch=-1, verbose=False)
+    return torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer=optimizer, T_0=10, T_mult=1, eta_min=0.001, last_epoch=-1)
 
 class Trainer:
     def __init__(self,config, args, device, data_loader, log_writer, type):
@@ -51,10 +52,9 @@ class Trainer:
         loss_save = list()
 
         for data in tqdm(self.data_loader, desc='Epoch: {}'.format(epoch)):
-
-            input_data = data[0].to(self.device)
+            input_data = data[0].to(device=torch.device(self.device))
             label = data[1].long()
-            label = label.to(self.device)
+            label = label.to(device=torch.device(self.device))
             y = model.forward(input_data) # (batch_size, n_classes)
             loss = self.loss_function(y, label)
 
@@ -82,8 +82,8 @@ class Trainer:
     def write_tb(self, loss, global_step):
         if self.type =='train':
             lr = self.optimizer.param_groups[0]["lr"]
-            self.log_writer.add_scalar("train/loss", loss, global_step)
-            self.log_writer.add_scalar("train/lr", lr, global_step)
+            self.log_writer.add_scalar("train/loss", loss, self.global_step)
+            self.log_writer.add_scalar("train/lr", lr, self.global_step)
             
         else:
             self.log_writer.add_scalar("valid/loss", loss, global_step)
@@ -95,17 +95,11 @@ class Trainer:
         
 
 
-
-
-
-
-
-
-
-def get_data_loader(config=None, dataset=None,data_type="train", shuffle=True,workers=10, drop_last=False):
+def get_data_loader(config=None, dataset=None,data_type="train", shuffle=True,workers=10, drop_last=True):
     batch_size = config.train.batch_size
     dataset = Make_Dataset(config.path_preprocessed, dataset, data_type)
-    data_loader = DataLoader(dataset, batch_size=batch_size, shuffle=shuffle, num_workers=workers, drop_last=drop_last,collate_fn = padded_seq)
+    data_loader = DataLoader(dataset, batch_size=batch_size, shuffle=shuffle, num_workers=workers, drop_last=drop_last, collate_fn = padded_seq)
+    #data_loader = DataLoader(dataset, batch_size = batch_size, shuffle=shuffle, num_workers=workers, drop_last=drop_last)
     return data_loader
 
 def padded_seq(samples):
@@ -122,6 +116,7 @@ def padded_seq(samples):
         data.append(sample["data"])
         label.append(sample["label"])
     data = padd(data)
+    data = torch.LongTensor(data)
     label = torch.Tensor(label)
     return data, label
 
@@ -133,12 +128,15 @@ class Make_Dataset(Dataset):
         if data_type =="train":
             self.data = self.dataset["train"]
             self.data_label = self.dataset["train_label"]
+            assert len(self.data) == len(self.data_label)
         elif data_type =="test":
             self.data = self.dataset["test"]
             self.data_label = self.dataset["test_label"]
+            assert len(self.data) == len(self.data_label)
         else:
             self.data = self.dataset["dev"]
             self.data_label = self.dataset["dev_label"]
+            assert len(self.data) == len(self.data_label)
 
     def __len__(self):
         return len(self.data)
@@ -152,3 +150,8 @@ class Make_Dataset(Dataset):
         ret_dict["label"] = self.data_label[idx]
 
         return ret_dict
+
+
+# import torch
+# dataset = torch.load("/data/user15/workspace/CNN/data/preprocessed/preprocessed.pkl")
+# dataset["MR"]["train"][0]
