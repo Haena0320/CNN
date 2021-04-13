@@ -1,0 +1,63 @@
+{
+  "path_preprocessed": "./data/preprocessed/preprocessed.pkl",
+  "path_pr_word2vec": "./data/word2vec/GoogleNews-vectors-negative300.bin",
+  "path_rawdata": {
+    "SST1" : ["data/temp/stsa.fine.phrases.train",
+    "data/temp/stsa.fine.dev",
+    "data/temp/stsa.fine.test"
+    ],
+    "SST2" : [
+    "data/temp/stsa.binary.phrases.train",
+    "data/temp/stsa.binary.dev",
+    "data/temp/stsa.binary.test"],
+    "MR" : [
+    "data/temp/rt-polarity.all",
+    "",
+    ""
+    ],
+    "SUBJ" : [
+    "data/temp/subj.all",
+    "",
+    ""
+    ],
+    "CR" : [
+    "data/temp/custrev.all",
+    "",
+    ""
+    ],
+    "MPQA" : [
+    "data/temp/mpqa.all",
+    "",
+    ""
+    ],
+    "TREC" : [
+    "data/temp/TREC.train.all",
+    "",
+    "data/temp/TREC.test.all"
+    ]
+  },
+  "model_info": {
+    "rand": {"channel":1, "pretrained": "False", "fine_tunned": "True"},
+    "static": {"channel":1, "pretrained": "True", "fine_tunned": "False"},
+    "non-static": {"channel": 1, "pretrained": "True", "fine_tunned": "True"},
+    "multi-channel": {"channel": 2, "pretrained": "True", "fine_tunned": ["True", "False"]}
+  },
+  "train": {
+    "batch_size": 300,
+    "dimension": 300,
+    "weight_decay": 1e-5,
+    "init_lr":0.1,
+    "warmup_steps": 10,
+    "max_lr" : 5,
+    "clip":5
+  },
+  "data_info": {
+    "MR": {"vocab_size": 21403, "classes": 2, "word2id": "./data/preprocessed/word2id/MR.pkl", "weights": "./data/preprocessed/weights/MR.pkl"},
+    "SST1": {"vocab_size": 19538,"classes": 5, "word2id": "./data/preprocessed/word2id/SST1.pkl", "weights": "./data/preprocessed/weights/SST1.pkl"},
+    "SST2": {"vocab_size": 18844, "classes": 2, "word2id": "./data/preprocessed/word2id/SST2.pkl", "weights": "./data/preprocessed/weights/SST2.pkl"},
+    "SUBJ": {"vocab_size": 23910, "classes": 2, "word2id": "./data/preprocessed/word2id/SUBJ.pkl", "weights": "./data/preprocessed/weights/SUBJ.pkl"},
+    "TREC": {"vocab_size": 9776 ,"classes": 6, "word2id": "./data/preprocessed/word2id/TREC.pkl", "weights": "./data/preprocessed/weights/TREC.pkl"},
+    "CR": {"vocab_size": 5713, "classes": 2, "word2id": "./data/preprocessed/word2id/CR.pkl", "weights": "./data/preprocessed/weights/CR.pkl"},
+    "MPQA": {"vocab_size": 6301, "classes": 2, "word2id": "./data/preprocessed/word2id/MPQA.pkl", "weights": "./data/preprocessed/weights/MPQA.pkl"}
+  }
+}
